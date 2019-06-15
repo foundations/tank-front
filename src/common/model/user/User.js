@@ -1,74 +1,70 @@
 import BaseEntity from '../base/BaseEntity'
 import Filter from '../base/Filter'
-import {readLocalStorage, removeLocalStorage, saveToLocalStorage} from "../../util/Utils";
-import UserInputSelection from '../../../backyard/user/widget/UserInputSelection'
+import {currentHost, readLocalStorage, removeLocalStorage, saveToLocalStorage} from "../../util/Utils";
+
 import {UserRole} from "./UserRole";
 import {UserStatus, UserStatusList} from "./UserStatus";
-import {UserGender} from "./UserGender";
 import {FilterType} from "../base/FilterType";
+import {handleImageUrl} from "../../util/ImageUtil";
+import {MessageBox, Message} from 'element-ui'
+import Vue from "vue"
 
+let defaultAvatarPath = require("../../../assets/img/avatar.png")
 
 export default class User extends BaseEntity {
 
   static LOCAL_STORAGE_KEY = "user";
+
   static URL_LOGIN = '/api/user/login'
+  static URL_AUTHENTICATION_LOGIN = '/api/user/authentication/login'
+  static URL_REGISTER = '/api/user/register'
   static URL_LOGOUT = '/api/user/logout'
   static URL_USER_CHANGE_PASSWORD = '/api/user/change/password'
   static URL_USER_RESET_PASSWORD = '/api/user/reset/password'
-  static URL_USER_DISABLE = '/api/user/disable'
-  static URL_USER_ENABLE = '/api/user/enable'
+  static URL_USER_TOGGLE_STATUS = '/api/user/toggle/status'
+  static URL_USER_TRANSFIGURATION = '/api/user/transfiguration'
 
   constructor(args) {
     super(args)
     this.role = UserRole.GUEST
     this.username = null
     this.password = null
-    this.email = null
-    this.phone = null
-    this.gender = UserGender.MALE
-    this.city = null
     this.avatarUrl = null
     this.lastIp = null
     this.lastTime = null
     //默认大小限制100Mb.
     this.sizeLimit = 104857600
+    this.totalSize = 0
+    this.totalSizeLimit = -1
     this.status = UserStatus.OK
 
     //local fields
     this.isLogin = false
 
-    //登录的密码，服务器返回字段中没有密码
-    this.localPassword = null
-
     this.validatorSchema = {
       username: {
         rules: [
-          {required: true, message: '昵称必填'},
+          {required: true, message: 'username required'},
           {
             type: 'string',
             pattern: /^[0-9a-zA-Z_]+$/,
-            message: '昵称只能包含字母，数字和"_"'
-          }],
-        error: null
-      },
-      password: {
-        rules: [
-          {required: true, message: '密码必填'},
-          {min: 6, message: '密码长度至少为6位'}
-        ],
-        error: null
-      },
-      email: {
-        rules: [
-          {required: true, message: '邮箱必填'},
-          {
-            type: 'string',
-            pattern: /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/,
-            message: '邮箱格式不正确'
+            message: "only lowercase letter and number and _ is permitted."
           }],
         error: null
       }
     }
+  }
+
+  getAvatarUrl() {
+    if (this.avatarUrl) {
+      return handleImageUrl(this.avatarUrl)
+    } else {
+      return defaultAvatarPath
+    }
+  }
+
+  getUrlPrefix() {
+    return "/api/user"
   }
 
   render(obj) {
@@ -79,8 +75,7 @@ export default class User extends BaseEntity {
   getFilters() {
     return [
       ...super.getFilters(),
-      new Filter(FilterType.HTTP_INPUT_SELECTION, '用户', 'username', null, User, true, UserInputSelection),
-      new Filter(FilterType.INPUT, '邮箱', 'email'),
+      new Filter(FilterType.INPUT, '用户', 'username', null, User, false),
       new Filter(FilterType.INPUT, '手机号', 'phone', null, null, false),
       new Filter(FilterType.SELECTION, '状态', 'status', UserStatusList),
       new Filter(FilterType.SORT, '最新更新时间', 'orderLastTime')
@@ -138,36 +133,21 @@ export default class User extends BaseEntity {
     }
   }
 
-
   getForm() {
     let form = {
-      avatarUrl: this.avatarUrl,
       username: this.username,
       password: this.password,
-      email: this.email,
-      gender: this.gender,
-      sizeLimit: this.sizeLimit
-    }
-
-    if (this.phone) {
-      form.phone = this.phone
-    }
-    if (this.city) {
-      form.city = this.city
-    }
-    if (this.uuid) {
-      form.uuid = this.uuid
+      role: this.role,
+      avatarUrl: this.avatarUrl,
+      sizeLimit: this.sizeLimit,
+      totalSizeLimit: this.totalSizeLimit,
+      uuid: this.uuid ? this.uuid : null
     }
 
     return form
-
   }
 
   validate() {
-
-    if (this.editMode) {
-      this.password = '10101010'
-    }
 
     return super.validate()
   }
@@ -181,6 +161,30 @@ export default class User extends BaseEntity {
 
   }
 
+
+  transfiguration() {
+    let that = this
+    this.httpTransfiguration(function (authentication) {
+      let textToCopy = currentHost() + "/user/authentication/" + authentication
+      MessageBox.confirm(Vue.i18n.t("model.transfigurationPrompt", [textToCopy]), Vue.i18n.t("model.transfigurationPromptText"), {
+        confirmButtonText: Vue.i18n.t("copy"),
+        cancelButtonText: Vue.i18n.t("cancel"),
+        type: 'info'
+      }).then(function () {
+
+          Vue.$copyPlguin.copy(textToCopy, function () {
+            Message.success({
+              message: Vue.i18n.t("operationSuccess"),
+              center: true
+            })
+          })
+        },
+        function () {
+        }
+      )
+    });
+  }
+
   innerLogin(response) {
     let that = this
     this.errorMessage = null
@@ -192,45 +196,21 @@ export default class User extends BaseEntity {
 
   }
 
-  loginValidate() {
-
-    if (!this.email) {
-      this.errorMessage = '账号必填'
-      return false
-    }
-
-    if (!this.localPassword) {
-      this.errorMessage = '密码必填'
-      return false
-    }
-
-    return true
-  }
-
-  getLoginForm() {
-
-    return {
-      email: this.email,
-      password: this.localPassword
-    }
-  }
-
-  getResetForm() {
-    return {
-      phone: this.phone,
-      password: this.password
-    }
-  }
-
-  httpLogin(successCallback, errorCallback) {
+  httpLogin(username, password, successCallback, errorCallback) {
 
     let that = this
 
-    if (!this.loginValidate()) {
-      return
+    if (!username) {
+      this.errorMessage = 'username required'
+      return false
     }
 
-    let form = this.getLoginForm()
+    if (!password) {
+      this.errorMessage = 'password required'
+      return false
+    }
+
+    let form = {username, password}
 
     this.httpPost(User.URL_LOGIN, form, function (response) {
 
@@ -238,6 +218,33 @@ export default class User extends BaseEntity {
 
       that.safeCallback(successCallback)(response)
 
+    }, errorCallback)
+  }
+
+  httpRegister(username, password, rePassword, successCallback, errorCallback) {
+
+    let that = this
+
+    if (!username) {
+      this.errorMessage = 'username required'
+      return
+    }
+
+    if (!password) {
+      this.errorMessage = 'password required'
+      return
+    }
+
+    if (rePassword !== password) {
+      this.errorMessage = 'new and old password not same'
+      return
+    }
+
+    let form = {username, password}
+
+    this.httpPost(User.URL_REGISTER, form, function (response) {
+      that.innerLogin(response)
+      that.safeCallback(successCallback)(response)
     }, errorCallback)
   }
 
@@ -269,18 +276,31 @@ export default class User extends BaseEntity {
     }, errorCallback)
   }
 
-  httpChangeStatus(successCallback, errorCallback) {
-    let that = this
-    if (this.status === 'OK') {
-      this.httpPost(User.URL_USER_DISABLE, {'uuid': this.uuid}, function (response) {
-        typeof successCallback === 'function' && successCallback(response)
-      }, errorCallback)
-    } else {
-      this.httpPost(User.URL_USER_ENABLE, {'uuid': this.uuid}, function (response) {
-        typeof successCallback === 'function' && successCallback(response)
-      }, errorCallback)
-    }
 
+  httpToggleStatus(successCallback, errorCallback) {
+    let that = this
+    this.httpPost(User.URL_USER_TOGGLE_STATUS, {'uuid': this.uuid}, function (response) {
+      typeof successCallback === 'function' && successCallback(response)
+    }, errorCallback)
+  }
+
+
+  httpAuthenticationLogin(authentication, successCallback, errorCallback) {
+    let that = this
+    let form = {authentication}
+    this.httpPost(User.URL_AUTHENTICATION_LOGIN, form, function (response) {
+      that.innerLogin(response)
+      that.safeCallback(successCallback)(response)
+    }, errorCallback)
+  }
+
+
+  httpTransfiguration(successCallback, errorCallback) {
+    let that = this
+    let form = {'uuid': this.uuid}
+    this.httpPost(User.URL_USER_TRANSFIGURATION, form, function (response) {
+      that.safeCallback(successCallback)(response.data.msg)
+    }, errorCallback)
   }
 
 }

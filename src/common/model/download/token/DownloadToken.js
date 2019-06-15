@@ -1,6 +1,7 @@
 import BaseEntity from '../../base/BaseEntity'
 import Filter from "../../base/Filter";
 import {FilterType} from "../../base/FilterType";
+import {simpleDateTime} from "../../../filter/time";
 
 export default class DownloadToken extends BaseEntity {
 
@@ -12,6 +13,9 @@ export default class DownloadToken extends BaseEntity {
     this.matterUuid = null
     this.expireTime = null
     this.ip = null
+  }
+  getUrlPrefix() {
+    return "/api/download/token"
   }
 
   render(obj) {
@@ -27,7 +31,10 @@ export default class DownloadToken extends BaseEntity {
 
   httpFetchDownloadToken(matterUuid, successCallback, errorCallback) {
     let that = this
+    let date = new Date(new Date().getTime() + 10 * 60 * 1000)
+
     let form = {
+      expireTime: simpleDateTime(date),
       matterUuid
     }
     this.httpPost(DownloadToken.URL_FETCH_DOWNLOAD_TOKEN, form, function (response) {

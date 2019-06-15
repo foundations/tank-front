@@ -6,14 +6,15 @@ import Matter from "../../matter/Matter";
 
 export default class ImageCache extends BaseEntity {
 
-  static URL_DELETE = '/api/image/cache/delete'
   static URL_DELETE_BATCH = '/api/image/cache/delete/batch'
 
   constructor(args) {
     super(args)
 
+    this.name = null;
     this.userUuid = null;
     this.matterUuid = null;
+    this.matterName = null;
     this.mode = null;
     this.md5 = null;
     this.size = 0;
@@ -28,7 +29,9 @@ export default class ImageCache extends BaseEntity {
     this.user = new User()
     this.matter = new Matter()
   }
-
+  getUrlPrefix() {
+    return "/api/image/cache"
+  }
   render(obj) {
     super.render(obj)
 
@@ -37,8 +40,8 @@ export default class ImageCache extends BaseEntity {
   getFilters() {
     return [
       ...super.getFilters(),
-      new Filter(FilterType.INPUT, '用户Uuid', 'userUuid', null, null, false),
-      new Filter(FilterType.INPUT, '文件Uuid', 'matterUuid', null, null, false)
+      new Filter(FilterType.INPUT, 'User Uuid', 'userUuid', null, null, false),
+      new Filter(FilterType.INPUT, 'File Uuid', 'matterUuid', null, null, false)
     ]
   }
 
@@ -48,29 +51,14 @@ export default class ImageCache extends BaseEntity {
     }
   }
 
-  getMatterName() {
-
-    return this.path.substr(this.path.lastIndexOf("/") + 1)
-  }
-
-  getName() {
-    return this.getMatterName() + "?ir=" + this.mode
-  }
-
   getResizeUrl() {
-    return '/api/alien/preview/' + this.matterUuid + '/' + this.getName()
+    return '/api/alien/preview/' + this.matterUuid + '/' + this.matterName + "?ir=" + this.mode
   }
 
   getOriginUrl() {
-    return '/api/alien/download/' + this.matterUuid + '/' + this.getMatterName()
+    return '/api/alien/download/' + this.matterUuid + '/' + this.matterName
   }
 
-
-  httpDelete(successCallback, errorCallback) {
-    this.httpPost(ImageCache.URL_DELETE, {'uuid': this.uuid}, function (response) {
-      typeof successCallback === 'function' && successCallback(response)
-    }, errorCallback)
-  }
 
   httpDeleteBatch(uuids, successCallback, errorCallback) {
     this.httpPost(ImageCache.URL_DELETE_BATCH, {'uuids': uuids}, function (response) {

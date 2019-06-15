@@ -37,6 +37,54 @@ export default class Base {
   }
 
   /**
+   * 根据一个类型，渲染出对应的数组。
+   * @param json 字符串或者数组对象。
+   * @param Clazz 需要渲染的目标对象
+   * @returns {*}
+   */
+  static assignList(json, Clazz) {
+
+    let target = []
+
+    let arr = []
+
+    if (json instanceof String) {
+
+      arr = parseList(json);
+
+    } else if (json instanceof Array) {
+      arr = json
+    } else {
+
+      console.error("Src must be string or array", json)
+      return target
+    }
+
+    //如果我们要转换成字符串的数组形式，那么this[field]应该是一个字符串才对。
+    if (Clazz === String) {
+      return arr
+    }
+
+    if (!Clazz || !(Clazz.prototype instanceof Base)) {
+      console.error("Class must be  Base subclass ")
+      return target
+    }
+
+    for (let i = 0; i < arr.length; i++) {
+      let bean = arr[i]
+
+      let clazz = new Clazz()
+
+      clazz.render(bean)
+
+      target.push(clazz)
+    }
+
+    return target
+  }
+
+
+  /**
    *
    * @param field 字段名
    * @param Clazz 类型名
@@ -110,7 +158,7 @@ export default class Base {
       }
 
     } else {
-      console.error('调用错误！')
+      console.error('调用错误!')
     }
 
   }
@@ -179,27 +227,7 @@ export default class Base {
 
   }
 
-  //专门捕捉没有认证手机这种错误。return true -> 有错误（已经处理掉了）  false -> 没错误 （什么都没干）
-  phoneValidateErrorHandler(response) {
 
-    let temp = response['data']
-    if (temp !== null && typeof temp === 'object') {
-      if (temp['code'] === ResultCode.REQUIRE_PHONE) {
-
-        Message.error({
-          message: '请认证手机后再操作'
-        })
-
-        Vue.$popupPhoneValidation.show(Vue.store.state.user)
-
-        return true
-
-      }
-    }
-
-    return false
-
-  }
 
   //get errorMessage from response and wrap the value to this.errorMessage.
   getErrorMessage(response) {
@@ -207,7 +235,7 @@ export default class Base {
     let msg = '服务器出错，请稍后再试!'
 
     if (response === null) {
-      msg = '出错啦，请稍后重试！'
+      msg = '出错啦，请稍后重试!'
     } else if (typeof response === 'string') {
       msg = response
     } else if (response['msg']) {
@@ -260,11 +288,6 @@ export default class Base {
         return
       }
 
-      //对于没有认证手机的错误直接弹出手机认证框
-      if (that.phoneValidateErrorHandler(response)) {
-        return
-      }
-
       //有传入错误处理方法，就按你的执行
       if (typeof errorCallback === 'function') {
         errorCallback(that.getErrorMessage(response), response)
@@ -309,11 +332,6 @@ export default class Base {
         return
       }
 
-      //对于没有认证手机的错误直接弹出手机认证框
-      if (that.phoneValidateErrorHandler(response)) {
-        return
-      }
-
       //有传入错误处理方法，就按你的执行
       if (typeof errorCallback === 'function') {
         errorCallback(that.getErrorMessage(response), response)
@@ -337,12 +355,6 @@ export default class Base {
     }
 
     return lowerCamel(className)
-  }
-
-  //获取到当前类的复数标签。比如 Project便得到 projects
-  getTAGS() {
-
-    return toPlural(this.getTAG())
   }
 
   //获取到当前实体的url前缀。

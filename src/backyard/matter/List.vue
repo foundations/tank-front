@@ -2,46 +2,72 @@
   <div class="backyard-matter-list">
     <div class="row">
 
-      <div class="col-md-6 mb10">
-        <button class="btn btn-primary btn-sm " v-if="selectedMatters.length !== pager.data.length"
+      <div class="col-md-8 mb10">
+        <button class="btn btn-primary btn-sm mr5 mb5" v-if="selectedMatters.length !== pager.data.length"
                 @click.stop.prevent="checkAll">
           <i class="fa fa-check-square"></i>
-          全选
+          {{ $t("selectAll") }}
         </button>
-        <button class="btn btn-primary btn-sm "
+
+        <button class="btn btn-primary btn-sm mr5 mb5"
                 v-if="pager.data.length && selectedMatters.length === pager.data.length"
                 @click.stop.prevent="checkNone">
           <i class="fa fa-square-o"></i>
-          取消全选
-        </button>
-        <button class="btn btn-primary btn-sm " v-if="selectedMatters.length" @click.stop.prevent="deleteBatch">
-          <i class="fa fa-trash"></i>
-          删除
-        </button>
-        <button class="btn btn-primary btn-sm " v-if="selectedMatters.length"
-                @click.stop.prevent="moveBatch($createElement)">
-          <i class="fa fa-arrows"></i>
-          移动
+          {{ $t("cancel") }}
         </button>
 
-        <span class="btn btn-primary btn-sm btn-file ">
+        <button class="btn btn-primary btn-sm mr5 mb5" v-if="selectedMatters.length" @click.stop.prevent="deleteBatch">
+          <i class="fa fa-trash"></i>
+          {{ $t("delete") }}
+        </button>
+
+        <button class="btn btn-primary btn-sm mr5 mb5" v-if="selectedMatters.length" @click.stop.prevent="downloadZip">
+          <i class="fa fa-download"></i>
+          {{ $t("matter.download") }}
+        </button>
+
+        <button class="btn btn-primary btn-sm mr5 mb5" v-if="selectedMatters.length"
+                @click.stop.prevent="moveBatch($createElement)">
+          <i class="fa fa-arrows"></i>
+          {{ $t("matter.move") }}
+        </button>
+
+        <button class="btn btn-primary btn-sm mr5 mb5" v-if="selectedMatters.length"
+                @click.stop.prevent="shareDialogVisible = !shareDialogVisible">
+          <i class="fa fa-share-alt"></i>
+          {{ $t("matter.share") }}
+        </button>
+
+        <el-dialog
+          :title="$t('matter.share')"
+          :visible.sync="shareDialogVisible"
+          :append-to-body="true">
+
+          <SharePanel :matters="selectedMatters"
+                      @close="shareDialogVisible = false"/>
+
+        </el-dialog>
+
+
+        <span class="btn btn-primary btn-sm btn-file mr5 mb5">
               <slot name="button">
                 <i class="fa fa-cloud-upload"></i>
-                <span>上传文件</span>
+                <span> {{ $t("matter.upload") }} </span>
               </slot>
               <input ref="refFile" type="file" multiple="multiple" @change.prevent.stop="triggerUpload"/>
 				    </span>
 
-        <button class="btn btn-sm btn-primary " @click.stop.prevent="createDirectory">
-          <i class="fa fa-plus"></i>
-          创建文件夹
+        <button class="btn btn-sm btn-primary mr5 mb5" @click.stop.prevent="createDirectory">
+          <i class="fa fa-folder"></i>
+          {{ $t("matter.create") }}
         </button>
 
       </div>
 
-      <div class="col-md-6 mb10">
+      <div class="col-md-4 mb10">
         <div class="input-group">
-          <input type="text" class="form-control" v-model="searchText" @keyup.enter="searchFile" placeholder="搜索文件">
+          <input type="text" class="form-control" v-model="searchText" @keyup.enter="searchFile"
+                 :placeholder="$t('matter.searchFile')">
           <span class="input-group-btn">
             <button type="button" class="btn btn-primary" @click.prevent.stop="searchFile">
               <i class="fa fa-search"></i>
@@ -63,7 +89,8 @@
                        :director="director"/>
         </div>
         <div v-for="matter in pager.data">
-          <MatterPanel @goToDirectory="goToDirectory"
+          <MatterPanel :key="matter.uuid"
+                       @goToDirectory="goToDirectory"
                        @deleteSuccess="refresh()"
                        :matter="matter"
                        :director="director"
@@ -73,7 +100,7 @@
         </div>
 
         <div>
-          <NbPager :pager="pager" :callback="refresh" emptyHint="该目录下暂无任何内容"/>
+          <NbPager :pager="pager" :callback="refresh" :emptyHint="$t('matter.noContentYet')"/>
         </div>
       </div>
 
@@ -86,6 +113,7 @@
   import MatterPanel from './widget/MatterPanel'
   import UploadMatterPanel from './widget/UploadMatterPanel'
   import MoveBatchPanel from './widget/MoveBatchPanel'
+  import SharePanel from './widget/ShareOperationPanel'
   import NbSlidePanel from '../../common/widget/NbSlidePanel.vue'
   import NbExpanding from '../../common/widget/NbExpanding.vue'
   import NbCheckbox from '../../common/widget/NbCheckbox.vue'
@@ -98,6 +126,7 @@
   import {UserRole} from "../../common/model/user/UserRole";
   import {SortDirection} from "../../common/model/base/SortDirection";
   import {humanFileSize} from "../../common/filter/str";
+  import Share from "../../common/model/share/Share";
 
   export default {
     data() {
@@ -113,10 +142,16 @@
         //搜索的文字
         searchText: null,
         pager: new Pager(Matter, 50),
+        //移动的目标文件夹
+        targetMatterUuid: null,
         user: this.$store.state.user,
         preference: this.$store.state.preference,
         breadcrumbs: this.$store.state.breadcrumbs,
-        director: new Director()
+        director: new Director(),
+
+        share: new Share(),
+        //分享的弹框
+        shareDialogVisible: false
 
       }
     },
@@ -124,6 +159,7 @@
       MatterPanel,
       UploadMatterPanel,
       MoveBatchPanel,
+      SharePanel,
       NbCheckbox,
       NbFilter,
       NbPager,
@@ -159,14 +195,6 @@
           this.pager.setFilterValue('userUuid', this.user.uuid)
         }
 
-        //如果没有设置alien，那么默认听从偏好设置中的。
-        if (this.pager.getFilterValue('alien') !== true || this.pager.getFilterValue('alien') !== false) {
-          //显示应用文件意味着 应用文件和非应用文件一起显示。
-          if (!this.preference.showAlien) {
-            this.pager.setFilterValue('alien', false)
-          }
-        }
-
         this.pager.setFilterValue("name", null)
 
 
@@ -179,7 +207,6 @@
         this.pager.setFilterValue('puuid', uuid)
         this.pager.page = 0
         let query = this.pager.getParams()
-
 
         //采用router去管理路由，否则浏览器的回退按钮出现意想不到的问题。
         this.$router.push({
@@ -203,7 +230,7 @@
           this.matter.uuid = 'root'
           that.breadcrumbs.splice(0, that.breadcrumbs.length)
           that.breadcrumbs.push({
-            title: '全部文件'
+            title: 'matter.allFiles'
           })
 
         } else {
@@ -224,7 +251,7 @@
             //添加一个随机数，防止watch $route失败
             query['_t'] = new Date().getTime()
             that.breadcrumbs.push({
-              title: '全部文件',
+              title: 'matter.allFiles',
               path: '/',
               query: query
             })
@@ -236,20 +263,22 @@
               query['_t'] = new Date().getTime()
               that.breadcrumbs.push({
                 title: m.name,
+                displayDirect: true,
                 path: '/',
                 query: query
               })
             }
             //第一个文件
             that.breadcrumbs.push({
-              title: that.matter.name
+              title: that.matter.name,
+              displayDirect: true,
             })
           })
         }
       },
       createDirectory() {
         let that = this
-        that.newMatter.name = '新建文件夹'
+        that.newMatter.name = 'matter.allFiles'
         that.newMatter.dir = true
         that.newMatter.editMode = true
         that.newMatter.puuid = that.matter.uuid
@@ -277,12 +306,12 @@
 
         let domFiles = that.$refs['refFile'].files;
         if (!domFiles || !domFiles.length) {
-          that.$message.error("没有选择文件")
+          that.$message.error(that.$t('matter.allFiles'))
           return;
         }
 
         if (domFiles.length > 1000) {
-          that.$message.error("最多只能同时选取1000个文件")
+          that.$message.error(that.$t('matter.exceed1000'))
           return;
         }
 
@@ -303,7 +332,7 @@
           //判断文件大小。
           if (that.user.sizeLimit >= 0) {
             if (domFile.size > that.user.sizeLimit) {
-              that.$message.error("文件大小超过了限制 " + humanFileSize(domFile.size) + " > " + humanFileSize(that.user.sizeLimit))
+              that.$message.error(that.$t('matter.sizeExceedLimit', humanFileSize(domFile.size), humanFileSize(that.user.sizeLimit)))
               continue
             }
           }
@@ -364,12 +393,24 @@
         })
 
       },
+
+      //批量删除
+      downloadZip() {
+        let that = this
+        let uuids = []
+
+        that.selectedMatters.forEach(function (item, index) {
+          uuids.push(item.uuid)
+        })
+
+        that.matter.downloadZip(uuids.toString())
+      },
       //批量删除
       deleteBatch() {
         let that = this
-        MessageBox.confirm('此操作将永久删除这些文件, 是否继续?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+        MessageBox.confirm(that.$t("actionCanNotRevertConfirm"), that.$t("prompt"), {
+          confirmButtonText: that.$t("confirm"),
+          cancelButtonText: that.$t("cancel"),
           type: 'warning',
           callback: function (action, instance) {
             if (action === 'confirm') {
@@ -382,7 +423,7 @@
                 }
               })
               that.matter.httpDeleteBatch(uuids, function (response) {
-                Message.success('删除成功！')
+                Message.success(that.$t("operationSuccess"))
                 that.refresh()
               })
             }
@@ -390,20 +431,21 @@
           }
         })
       },
+
       //批量移动
       moveBatch(createElement) {
         let that = this
 
-        let targetMatterUuid = null
+
         let dom = createElement(MoveBatchPanel, {
           props: {
             version: (new Date()).getTime(),
             userUuid: that.selectedMatters[0].userUuid,
             callback: function (matter) {
               if (matter.uuid) {
-                targetMatterUuid = matter.uuid
+                that.targetMatterUuid = matter.uuid
               } else {
-                targetMatterUuid = "root"
+                that.targetMatterUuid = "root"
               }
             }
           }
@@ -413,7 +455,7 @@
           title: '移动到',
           message: dom,
           customClass: 'wp50',
-          confirmButtonText: '确定',
+          confirmButtonText: that.$t("confirm"),
           showCancelButton: true,
           cancelButtonText: '关闭',
           callback: (action, instance) => {
@@ -427,7 +469,7 @@
                 }
               })
 
-              that.matter.httpMove(uuids, targetMatterUuid, function (response) {
+              that.matter.httpMove(uuids, that.targetMatterUuid, function (response) {
                 Message.success('移动成功！')
                 that.refresh()
               })

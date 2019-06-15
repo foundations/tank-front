@@ -1,4 +1,5 @@
 import BaseEntity from '../base/BaseEntity'
+import Vue from "vue"
 
 export default class Install extends BaseEntity {
 
@@ -22,7 +23,6 @@ export default class Install extends BaseEntity {
 
     //管理员用户名
     this.adminUsername = null
-    this.adminEmail = null
     this.adminPassword = null
     this.adminRepassword = null
 
@@ -40,23 +40,23 @@ export default class Install extends BaseEntity {
 
     this.validatorSchema = {
       mysqlPort: {
-        rules: [{required: true, message: 'MySQL端口必填'}],
+        rules: [{required: true, message: 'MySQL required'}],
         error: null
       },
       mysqlHost: {
-        rules: [{required: true, message: 'MySQL Host必填'}],
+        rules: [{required: true, message: 'MySQL Host required'}],
         error: null
       },
       mysqlSchema: {
-        rules: [{required: true, message: 'MySQL 数据库名必填'}],
+        rules: [{required: true, message: 'MySQL schema required'}],
         error: null
       },
       mysqlUsername: {
-        rules: [{required: true, message: 'MySQL 用户名必填'}],
+        rules: [{required: true, message: 'MySQL username required'}],
         error: null
       },
       mysqlPassword: {
-        rules: [{required: true, message: 'MySQL 密码必填'}],
+        rules: [{required: true, message: 'MySQL password required'}],
         error: null
       }
 
@@ -65,35 +65,25 @@ export default class Install extends BaseEntity {
     this.adminValidatorSchema = {
       adminUsername: {
         rules: [
-          {required: true, message: '昵称必填'},
+          {required: true, message: 'Username required'},
           {
             type: 'string',
             pattern: /^[0-9a-zA-Z_]+$/,
-            message: '昵称只能包含字母，数字和"_"'
-          }],
-        error: null
-      },
-      adminEmail: {
-        rules: [
-          {required: true, message: '邮箱必填'},
-          {
-            type: 'string',
-            pattern: /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/,
-            message: '邮箱格式不正确'
+            message: Vue.i18n.t("model.usernameRule")
           }],
         error: null
       },
       adminPassword: {
         rules: [
-          {required: true, message: '密码必填'},
-          {min: 6, message: '密码长度至少为6位'}
+          {required: true, message: 'Password required'},
+          {min: 6, message: Vue.i18n.t("model.passwordRule")}
         ],
         error: null
       },
       adminRepassword: {
         rules: [
-          {required: true, message: '密码必填'},
-          {min: 6, message: '密码长度至少为6位'}
+          {required: true, message: 'Password required'},
+          {min: 6, message: Vue.i18n.t("model.passwordRule")}
         ],
         error: null
       }
@@ -102,6 +92,9 @@ export default class Install extends BaseEntity {
 
   }
 
+  getUrlPrefix() {
+    return "/api/install"
+  }
   render(obj) {
     super.render(obj)
   }
@@ -144,7 +137,7 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.validate()) {
-      this.defaultErrorHandler("验证不通过", errorCallback)
+      this.defaultErrorHandler("Validate error", errorCallback)
       return
     }
 
@@ -159,7 +152,7 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.verified) {
-      this.defaultErrorHandler("请首先验证数据库连接", errorCallback)
+      this.defaultErrorHandler("Please verify mysql first", errorCallback)
       return
     }
 
@@ -177,7 +170,7 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.verified) {
-      this.defaultErrorHandler("请首先验证数据库连接", errorCallback)
+      this.defaultErrorHandler("Please verify mysql first", errorCallback)
       return
     }
 
@@ -196,7 +189,7 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.tableCreated()) {
-      this.defaultErrorHandler("请首先创建数据库表", errorCallback)
+      this.defaultErrorHandler("Please verify create table first", errorCallback)
       return
     }
 
@@ -221,26 +214,25 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.tableCreated()) {
-      this.defaultErrorHandler("请首先创建数据库表", errorCallback)
+      this.defaultErrorHandler("Please verify create table first", errorCallback)
       return
     }
 
 
     if (!this.validate(that.adminValidatorSchema)) {
-      this.defaultErrorHandler("验证不通过", errorCallback)
+      this.defaultErrorHandler("Validate error", errorCallback)
       return
     }
 
 
     if (this.adminPassword !== this.adminRepassword) {
-      this.defaultErrorHandler("两次密码不一致", errorCallback)
+      this.defaultErrorHandler("password not same", errorCallback)
       return
     }
 
 
     let form = this.getForm()
     form["adminUsername"] = this.adminUsername
-    form["adminEmail"] = this.adminEmail
     form["adminPassword"] = this.adminPassword
 
 
@@ -258,18 +250,17 @@ export default class Install extends BaseEntity {
     let that = this
 
     if (!this.tableCreated()) {
-      this.defaultErrorHandler("请首先创建数据库表", errorCallback)
+      this.defaultErrorHandler("Please verify create table first", errorCallback)
       return
     }
 
-    if (!this.adminEmail || !this.adminPassword) {
-      this.defaultErrorHandler("邮箱和密码必填", errorCallback)
+    if (!this.adminUsername || !this.adminPassword) {
+      this.defaultErrorHandler("username and password required", errorCallback)
       return
     }
-
 
     let form = this.getForm()
-    form["adminEmail"] = this.adminEmail
+    form["adminUsername"] = this.adminUsername
     form["adminPassword"] = this.adminPassword
 
 

@@ -22,26 +22,27 @@
 
             <span class="matter-operation">
 
-              <i class="fa fa-lock btn-action text-primary" v-if="!matter.dir && matter.privacy" title="设置为公有文件"
+              <i class="fa fa-lock btn-action text-primary" v-if="!matter.dir && matter.privacy"
+                 :title="$t('matter.setPublic')"
                  @click.stop.prevent="matter.httpChangePrivacy(false)"></i>
-              <i class="fa fa-unlock btn-action text-primary" v-if="!matter.dir && !matter.privacy" title="设置为私有文件"
+              <i class="fa fa-unlock btn-action text-primary" v-if="!matter.dir && !matter.privacy"
+                 :title="$t('matter.setPrivate')"
                  @click.stop.prevent="matter.httpChangePrivacy(true)"></i>
 
-              <i class="fa fa-info-circle btn-action text-primary" v-if="!matter.dir" title="文件详情"
+              <i class="fa fa-info-circle btn-action text-primary" :title="$t('matter.file')"
                  @click.stop.prevent="$router.push('/matter/detail/'+matter.uuid)"></i>
 
-              <i class="fa fa-font btn-action text-primary" title="重命名" @click.stop.prevent="prepareRename"></i>
-              <i class="fa fa-link btn-action text-primary" title="复制下载链接" v-if="!matter.dir"
+              <i class="fa fa-font btn-action text-primary" :title="$t('matter.rename')"
+                 @click.stop.prevent="prepareRename"></i>
+              <i class="fa fa-link btn-action text-primary" :title="$t('matter.copyLink')" v-if="!matter.dir"
                  @click.stop.prevent="clipboard"></i>
-              <i class="fa fa-download btn-action text-primary" title="下载" v-if="!matter.dir"
+              <i class="fa fa-download btn-action text-primary" :title="$t('matter.download')"
                  @click.stop.prevent="matter.download()"></i>
 
-              <i class="fa fa-trash btn-action text-danger" title="删除" @click.stop.prevent="deleteMatter"></i>
+              <i class="fa fa-trash btn-action text-danger" :title="$t('matter.delete')"
+                 @click.stop.prevent="deleteMatter"></i>
             </span>
-            <span class="matter-size" v-if="matter.dir">
-              -
-            </span>
-            <span class="matter-size" v-else>
+            <span class="matter-size">
               {{matter.size | humanFileSize}}
             </span>
 
@@ -55,7 +56,7 @@
         <!--在小屏幕下的操作栏-->
         <div class="pull-right hidden-lg hidden-md">
           <span class="more-btn" @click.stop.prevent="showMore = !showMore">
-            <i class="fa fa-ellipsis-h btn-action" title="重命名"></i>
+            <i class="fa fa-ellipsis-h btn-action" :title="$t('matter.more')"></i>
           </span>
         </div>
 
@@ -67,14 +68,14 @@
               <input ref="editInput" class="form-control"
                      :class="matter.uuid"
                      v-model="renameMatterName"
-                     placeholder="请输入名称"
+                     :placeholder="$t('matter.enterName')"
                      @blur="blurTrigger()"
                      v-on:keyup.13="enterTrigger()"/>
               </span>
             <span class="matter-name"
-                  :title="matter.alien?'该文件是应用数据，存放的系统内头像，logo等文件，或者是通过接口上传的第三方文件':matter.name"
-                  :class="{alien:matter.alien}" v-else>
-                {{matter.name}} <i class="fa fa-unlock" v-if="!matter.dir && !matter.privacy" title="公有文件，任何人可以访问"></i>
+                  :title="matter.name" v-else>
+                {{matter.name}} <i class="fa fa-unlock" v-if="!matter.dir && !matter.privacy"
+                                   :title="$t('matter.publicFileEveryoneCanVisit')"></i>
               </span>
 
           </div>
@@ -95,44 +96,45 @@
           </span>
         </div>
 
-        <div class="cell-btn" v-if="!matter.dir && matter.privacy" title="设置为公有文件"
+        <div class="cell-btn" v-if="!matter.dir && matter.privacy" :title="$t('matter.setPublic')"
              @click.stop.prevent="matter.httpChangePrivacy(false)">
           <i class="fa fa-lock"></i>
-          设置为公有文件
+          {{$t('matter.setPublic')}}
         </div>
 
-        <div class="cell-btn" v-if="!matter.dir && !matter.privacy" title="设置为私有文件"
+        <div class="cell-btn" v-if="!matter.dir && !matter.privacy" :title="$t('matter.setPrivate')"
              @click.stop.prevent="matter.httpChangePrivacy(true)">
           <i class="fa fa-unlock"></i>
-          设置为私有文件
+          {{$t('matter.setPrivate')}}
         </div>
 
-        <div class="cell-btn" title="文件详情" @click.stop.prevent="$router.push('/matter/detail/'+matter.uuid)">
+        <div class="cell-btn" :title="$t('matter.fileDetail')"
+             @click.stop.prevent="$router.push('/matter/detail/'+matter.uuid)">
           <i class="fa fa-info-circle"></i>
-          文件详情
+          {{$t('matter.fileDetail')}}
         </div>
 
-        <div class="cell-btn" title="重命名" @click.stop.prevent="prepareRename">
+        <div class="cell-btn" :title="$t('matter.rename')" @click.stop.prevent="prepareRename">
           <i class="fa fa-pencil"></i>
-          重命名
+          {{$t('matter.rename')}}
         </div>
 
-        <div class="cell-btn" title="复制下载链接" v-if="!matter.dir"
+        <div class="cell-btn" :title="$t('matter.copyLink')"
              @click.stop.prevent="clipboard">
           <i class="fa fa-link"></i>
-          复制下载链接
+
+          {{$t('matter.copyLink')}}
         </div>
 
-
-        <div class="cell-btn" title="下载" v-if="!matter.dir"
+        <div class="cell-btn" :title="$t('matter.download')"
              @click.stop.prevent="matter.download()">
           <i class="fa fa-download"></i>
-          下载
+          {{$t('matter.download')}}
         </div>
 
-        <div class="cell-btn text-danger" title="删除" @click.stop.prevent="deleteMatter">
+        <div class="cell-btn text-danger" :title="$t('matter.delete')" @click.stop.prevent="deleteMatter">
           <i class="fa fa-trash"></i>
-          删除
+          {{$t('matter.delete')}}
         </div>
 
       </div>
@@ -203,14 +205,14 @@
       },
       deleteMatter() {
         let that = this
-        MessageBox.confirm('此操作将永久删除该文件, 是否继续?', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
+        MessageBox.confirm(that.$t('actionCanNotRevertConfirm'), that.$t('prompt'), {
+          confirmButtonText: that.$t("confirm"),
+          cancelButtonText: that.$t("cancel"),
           type: 'warning',
           callback: function (action, instance) {
             if (action === 'confirm') {
               that.matter.httpDelete(function (response) {
-                Message.success('删除成功！')
+                Message.success(that.$t('operationSuccess'))
                 that.$emit('deleteSuccess', that.matter)
               })
             }
@@ -254,7 +256,7 @@
         that.renamingLoading = true
         this.matter.httpRename(that.renameMatterName, function () {
           that.renamingLoading = false
-          Message.success('重命名成功！')
+          Message.success(that.$t('operationSuccess'))
           //告诉导演，自己编辑完毕
           that.director.renameMode = false
           that.matter.editMode = false
@@ -303,11 +305,12 @@
         $(this.$refs.editInput).select()
       },
       clipboard() {
+        let that = this
 
         let textToCopy = this.matter.getDownloadUrl();
         this.$copyPlguin.copy(textToCopy, function () {
           Message.success({
-            message: "复制成功!",
+            message: that.$t('operationSuccess'),
             center: true
           })
         })
@@ -380,10 +383,6 @@
         text-overflow: ellipsis;
         overflow: hidden;
 
-        &.alien {
-          color: @brand-primary;
-          font-weight: bold;
-        }
       }
     }
 

@@ -1,6 +1,7 @@
 import BaseEntity from '../base/BaseEntity'
 import Filter from "../base/Filter";
 import {FilterType} from "../base/FilterType";
+import {lowerSlash} from "../../filter/str";
 
 export default class Dashboard extends BaseEntity {
 
@@ -21,6 +22,11 @@ export default class Dashboard extends BaseEntity {
     this.dt = 0;
   }
 
+  //获取到当前实体的url前缀。
+  getUrlPrefix() {
+    return "/api/dashboard"
+  }
+
   render(obj) {
     super.render(obj)
 
@@ -29,7 +35,7 @@ export default class Dashboard extends BaseEntity {
   getFilters() {
     return [
       ...super.getFilters(),
-      new Filter(FilterType.SORT, '日期排序', 'orderDt')
+      new Filter(FilterType.SORT, 'Sort Dt', 'orderDt')
     ]
   }
 

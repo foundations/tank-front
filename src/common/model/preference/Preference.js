@@ -1,6 +1,10 @@
 import BaseEntity from '../base/BaseEntity'
 
 export default class Preference extends BaseEntity {
+
+  static URL_API_PREFERENCE_FETCH = '/api/preference/fetch'
+  static URL_API_SYSTEM_CLEANUP = '/api/preference/system/cleanup'
+
   constructor(args) {
     super(args)
     //网站名称
@@ -10,13 +14,20 @@ export default class Preference extends BaseEntity {
     this.logoUrl = null
     this.faviconUrl = null
 
-    //底部第一行文字
-    this.footerLine1 = null
-    this.footerLine2 = null
+    //版权信息
+    this.copyright = null
+    this.record = null
 
-    //是否显示应用数据
-    this.showAlien = true
-
+    //大小限制
+    this.downloadDirMaxSize = -1
+    //文件数量
+    this.downloadDirMaxNum = -1
+    //用户默认总大小限制
+    this.defaultTotalSizeLimit = -1
+    //是否允许自主注册
+    this.allowRegister = false
+    //后台版本
+    this.version = null
 
     this.validatorSchema = {
       name: {
@@ -26,20 +37,25 @@ export default class Preference extends BaseEntity {
     }
   }
 
-  static URL_API_PREFERENCE_FETCH = '/api/preference/fetch'
-
+  getUrlPrefix() {
+    return "/api/preference"
+  }
   render(obj) {
     super.render(obj)
   }
+
 
   getForm() {
     return {
       name: this.name,
       logoUrl: this.logoUrl,
       faviconUrl: this.faviconUrl,
-      footerLine1: this.footerLine1,
-      footerLine2: this.footerLine2,
-      showAlien: this.showAlien
+      copyright: this.copyright,
+      record: this.record,
+      downloadDirMaxNum: this.downloadDirMaxNum,
+      downloadDirMaxSize: this.downloadDirMaxSize,
+      defaultTotalSizeLimit: this.defaultTotalSizeLimit,
+      allowRegister: this.allowRegister
     }
   }
 
@@ -47,17 +63,6 @@ export default class Preference extends BaseEntity {
     return super.validate()
   }
 
-  httpFetch(successCallback, errorCallback) {
-    let that = this
-    this.httpPost(Preference.URL_API_PREFERENCE_FETCH, {}, function (response) {
-      that.render(response.data.data)
-
-      that.updateTitleAndFavicon()
-
-      that.safeCallback(successCallback)(response)
-
-    }, errorCallback)
-  }
 
   //修改title和favicon
   updateTitleAndFavicon() {
@@ -74,5 +79,28 @@ export default class Preference extends BaseEntity {
     document.title = this.name
 
   }
+
+
+  httpFetch(successCallback, errorCallback) {
+    let that = this
+    this.httpPost(Preference.URL_API_PREFERENCE_FETCH, {}, function (response) {
+      that.render(response.data.data)
+
+      that.updateTitleAndFavicon()
+
+      that.safeCallback(successCallback)(response)
+
+    }, errorCallback)
+  }
+
+  httpSystemCleanup(password, successCallback, errorCallback) {
+    let that = this
+    this.httpPost(Preference.URL_API_SYSTEM_CLEANUP, {password}, function (response) {
+
+      that.safeCallback(successCallback)(response)
+
+    }, errorCallback)
+  }
+
 
 }

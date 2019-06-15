@@ -1,14 +1,17 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import ByFrameView from '../../backyard/Frame.vue'
+import ShareList from '../../backyard/share/List'
+import ShareDetail from '../../backyard/share/Detail'
 import MatterList from '../../backyard/matter/List'
 import MatterDetail from '../../backyard/matter/Detail'
-import UserLogin from '../../backyard/user/Login.vue'
+import UserLogin from '../../backyard/user/Login'
+import UserAuthentication from '../../backyard/user/Authentication'
+import UserRegister from '../../backyard/user/Register'
 import UserList from '../../backyard/user/List'
 import UserDetail from '../../backyard/user/Detail'
 import UserChangePassword from '../../backyard/user/ChangePassword'
-import UserCreate from '../../backyard/user/Create'
-import ImageCacheList from '../../backyard/image/cache/List'
+import UserEdit from '../../backyard/user/Edit'
 import DashboardIndex from '../../backyard/dashboard/Index'
 import PreferenceIndex from '../../backyard/preference/Index'
 import InstallIndex from '../../backyard/install/Index'
@@ -32,32 +35,32 @@ const router = new Router({
           name: 'MatterList',
           component: MatterList,
           meta: {
-            title: '全部文件',
+            //here is i18n key
+            title: 'router.allFiles',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'MatterList',
-                title: '全部文件'
+                title: 'router.allFiles'
               }
             ]
           }
         },
-
         {
           path: 'matter/detail/:uuid',
           name: 'MatterDetail',
           component: MatterDetail,
           meta: {
-            title: '文件详情',
+            title: 'router.fileDetail',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'MatterList',
-                title: '文件列表'
+                title: 'router.allFiles'
               },
               {
                 name: 'MatterDetail',
-                title: '文件详情'
+                title: 'router.fileDetail'
               }
             ]
           }
@@ -67,7 +70,27 @@ const router = new Router({
           name: 'UserLogin',
           component: UserLogin,
           meta: {
-            title: '登录',
+            title: 'router.login',
+            requiresAuth: false,
+            breadcrumbs: []
+          }
+        },
+        {
+          path: 'user/authentication/:authentication',
+          name: 'UserAuthentication',
+          component: UserAuthentication,
+          meta: {
+            title: 'router.autoLogin',
+            requiresAuth: false,
+            breadcrumbs: []
+          }
+        },
+        {
+          path: 'user/register',
+          name: 'UserRegister',
+          component: UserRegister,
+          meta: {
+            title: 'router.register',
             requiresAuth: false,
             breadcrumbs: []
           }
@@ -77,12 +100,12 @@ const router = new Router({
           name: 'UserList',
           component: UserList,
           meta: {
-            title: '用户列表',
+            title: 'router.users',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'UserList',
-                title: '用户列表'
+                title: 'router.users'
               }
             ]
           }
@@ -92,16 +115,16 @@ const router = new Router({
           name: 'UserDetail',
           component: UserDetail,
           meta: {
-            title: '用户详情',
+            title: 'router.userDetail',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'UserList',
-                title: '用户列表'
+                title: 'router.users'
               },
               {
                 name: 'UserDetail',
-                title: '用户详情'
+                title: 'router.userDetail'
               }
             ]
           }
@@ -111,12 +134,12 @@ const router = new Router({
           name: 'UserChangePassword',
           component: UserChangePassword,
           meta: {
-            title: '修改密码',
+            title: 'router.changePassword',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'UserChangePassword',
-                title: '修改密码'
+                title: 'router.changePassword'
               }
             ]
           }
@@ -124,52 +147,64 @@ const router = new Router({
         {
           path: 'user/create',
           name: 'UserCreate',
-          component: UserCreate,
+          component: UserEdit,
           meta: {
-            title: '创建用户',
+            title: 'router.createUser',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'UserList',
-                title: '用户列表'
+                title: 'router.users'
               },
               {
                 name: 'UserCreate',
-                title: '创建用户'
+                title: 'router.createUser'
               }
             ]
           }
         },
+
         {
           path: 'user/edit/:uuid',
           name: 'UserEdit',
-          component: UserCreate,
+          component: UserEdit,
           meta: {
-            title: '编辑用户',
+            title: 'router.editUser',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'UserList',
-                title: '用户列表'
+                title: 'router.users'
               },
               {
                 name: 'UserEdit',
-                title: '编辑用户'
+                title: 'router.editUser'
               }
             ]
           }
         },
+
         {
-          path: 'image/cache/list',
-          name: 'ImageCacheList',
-          component: ImageCacheList,
+          path: 'share/detail/:uuid',
+          name: 'ShareDetail',
+          component: ShareDetail,
           meta: {
-            title: '图片缓存',
+            title: 'router.shareDetail',
+            requiresAuth: false,
+            breadcrumbs: []
+          }
+        },
+        {
+          path: 'share/list',
+          name: 'ShareList',
+          component: ShareList,
+          meta: {
+            title: 'router.myShare',
             requiresAuth: true,
             breadcrumbs: [
               {
-                name: 'ImageCacheList',
-                title: '图片缓存'
+                name: 'ShareList',
+                title: 'router.myShare'
               }
             ]
           }
@@ -179,12 +214,12 @@ const router = new Router({
           name: 'DashboardIndex',
           component: DashboardIndex,
           meta: {
-            title: '监控统计',
+            title: 'router.dashboard',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'DashboardIndex',
-                title: '监控统计'
+                title: 'router.dashboard'
               }
             ]
           }
@@ -195,12 +230,12 @@ const router = new Router({
           name: 'InstallIndex',
           component: InstallIndex,
           meta: {
-            title: '安装网站',
+            title: 'router.dashboard',
             requiresAuth: false,
             breadcrumbs: [
               {
                 name: 'InstallIndex',
-                title: '安装网站'
+                title: 'router.dashboard'
               }
             ]
           }
@@ -211,12 +246,12 @@ const router = new Router({
           name: 'PreferenceIndex',
           component: PreferenceIndex,
           meta: {
-            title: '网站偏好',
+            title: 'router.setting',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'PreferenceIndex',
-                title: '网站偏好'
+                title: 'router.setting'
               }
             ]
           }
@@ -227,16 +262,16 @@ const router = new Router({
           name: 'PreferenceEdit',
           component: PreferenceEdit,
           meta: {
-            title: '网站偏好设置',
+            title: 'router.setting',
             requiresAuth: true,
             breadcrumbs: [
               {
                 name: 'PreferenceIndex',
-                title: '网站偏好'
+                title: 'router.setting'
               },
               {
                 name: 'PreferenceEdit',
-                title: '网站偏好设置'
+                title: 'router.setting'
               }
             ]
           }
